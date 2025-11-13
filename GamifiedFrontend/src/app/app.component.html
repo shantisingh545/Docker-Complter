@@ -1,0 +1,176 @@
+<div class="app-container" *ngIf="isLoggedIn; else loginView">
+  <nav class="navbar" *ngIf="!isGameRoute()">
+    <div class="nav-brand">
+      <h1>🎮 Learning Dashboard</h1>
+    </div>
+    <div class="nav-items">
+      <button (click)="activeTab = 'dashboard'" [class.active]="activeTab === 'dashboard'">
+        📊 Dashboard
+      </button>
+      <button (click)="activeTab = 'games'" [class.active]="activeTab === 'games'">
+        🎯 Games
+      </button>
+      <button (click)="activeTab = 'leaderboard'" [class.active]="activeTab === 'leaderboard'">
+        🏆 Leaderboard
+      </button>
+      <button (click)="activeTab = 'ai-chat'" [class.active]="activeTab === 'ai-chat'">
+        🤖 AI Tutor
+      </button>
+      <button (click)="logout()" class="logout-btn">
+        🚪 Logout
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <router-outlet *ngIf="isGameRoute()"></router-outlet>
+    <div *ngIf="!isGameRoute()">
+      <app-dashboard *ngIf="activeTab === 'dashboard'"></app-dashboard>
+    
+    <div *ngIf="activeTab === 'games'" class="games-section">
+      <h2>🎮 Choose Your Game</h2>
+      <div class="games-grid">
+        <div class="game-card" (click)="openGame('quiz')">
+          <div class="game-icon">🧠</div>
+          <h3>Quiz Battle</h3>
+          <p>Test your knowledge with AI-generated questions</p>
+          <div class="points-info">💰 15 pts per correct + 5 participation</div>
+        </div>
+        <div class="game-card" (click)="openGame('typing')">
+          <div class="game-icon">⚡</div>
+          <h3>Typing Race</h3>
+          <p>Improve your typing speed and accuracy</p>
+          <div class="points-info">💰 1 pt per WPM + 20 completion bonus</div>
+        </div>
+        <div class="game-card" (click)="openGame('math')">
+          <div class="game-icon">🔢</div>
+          <h3>Math Lightning</h3>
+          <p>Solve math problems as fast as you can</p>
+          <div class="points-info">💰 5 pts per correct answer</div>
+        </div>
+        <div class="game-card" (click)="openGame('word')">
+          <div class="game-icon">🔤</div>
+          <h3>Word Scramble</h3>
+          <p>Unscramble educational vocabulary</p>
+          <div class="points-info">💰 10 pts per word + 5 no-hint bonus</div>
+        </div>
+        <div class="game-card" (click)="openGame('memory')">
+          <div class="game-icon">🧩</div>
+          <h3>Memory Flash</h3>
+          <p>Test your memory with sequences</p>
+          <div class="points-info">💰 8 pts per level completed</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div *ngIf="activeTab === 'leaderboard'" class="leaderboard-section">
+      <h2>🏆 Leaderboard</h2>
+      <div class="leaderboard-list">
+        <div *ngFor="let user of leaderboard; let i = index" class="leaderboard-item">
+          <div class="rank">{{i + 1}}</div>
+          <div class="username">{{user.username}}</div>
+          <div class="points">{{user.totalPoints}} pts</div>
+          <div class="level">Level {{user.currentLevel}}</div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'ai-chat'" class="ai-chat-section">
+      <h2>🤖 AI Tutor</h2>
+      <div class="chat-container">
+        <div class="chat-messages">
+          <!-- Welcome message when no chat history -->
+          <div *ngIf="chatMessages.length === 0" class="welcome-section">
+            <div class="welcome-message">
+              <h3>👋 Hello! I'm your AI Study Assistant</h3>
+              <p>I'm here to help you with your studies! Here's how you can use me:</p>
+              <ul class="usage-tips">
+                <li>📚 Ask questions about any subject (Math, Science, History, etc.)</li>
+                <li>💡 Get explanations for difficult concepts</li>
+                <li>📝 Request help with homework problems</li>
+                <li>🔍 Ask for study tips and learning strategies</li>
+                <li>📖 Get summaries of topics you're studying</li>
+              </ul>
+              <p><strong>Try one of these quick prompts to get started:</strong></p>
+            </div>
+            
+            <div class="quick-prompts">
+              <button (click)="useQuickPrompt('Explain photosynthesis in simple terms')" class="prompt-btn">
+                🌱 Explain photosynthesis
+              </button>
+              <button (click)="useQuickPrompt('Help me solve quadratic equations')" class="prompt-btn">
+                🔢 Help with quadratic equations
+              </button>
+              <button (click)="useQuickPrompt('What are the causes of World War 1?')" class="prompt-btn">
+                🌍 Causes of World War 1
+              </button>
+              <button (click)="useQuickPrompt('Explain the water cycle')" class="prompt-btn">
+                💧 Water cycle explanation
+              </button>
+              <button (click)="useQuickPrompt('How do I improve my study habits?')" class="prompt-btn">
+                📖 Study tips
+              </button>
+              <button (click)="useQuickPrompt('Explain fractions with examples')" class="prompt-btn">
+                ➗ Understanding fractions
+              </button>
+            </div>
+          </div>
+          
+          <!-- Chat messages -->
+          <div *ngFor="let message of chatMessages" 
+               [class]="'message ' + message.type">
+            <div class="message-content" [innerHTML]="formatMessage(message.content)"></div>
+            <div class="message-time">{{message.time | date:'short'}}</div>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input [(ngModel)]="chatInput" 
+                 (keyup.enter)="sendMessage()"
+                 placeholder="Ask me anything about your studies..."
+                 class="chat-input-field">
+          <button (click)="sendMessage()" class="send-btn">Send</button>
+        </div>
+      </div>
+    </div>
+    </div>
+  </main>
+</div>
+
+<ng-template #loginView>
+  <div class="login-container">
+    <div class="login-card">
+      <h1>🎮 Welcome to Learning Dashboard</h1>
+      <p>Gamify your learning experience!</p>
+      
+      <div class="login-form">
+        <input [(ngModel)]="loginData.username" 
+               placeholder="Username" 
+               class="login-input">
+        <input [(ngModel)]="loginData.password" 
+               type="password" 
+               placeholder="Password" 
+               class="login-input">
+        <button (click)="login()" class="login-btn">Login</button>
+        <button (click)="showRegister = !showRegister" class="register-toggle">
+          {{showRegister ? 'Back to Login' : 'Create Account'}}
+        </button>
+      </div>
+
+      <div *ngIf="showRegister" class="register-form">
+        <h3>Create New Account</h3>
+        <input [(ngModel)]="registerData.username" 
+               placeholder="Username" 
+               class="login-input">
+        <input [(ngModel)]="registerData.email" 
+               placeholder="Email" 
+               class="login-input">
+        <input [(ngModel)]="registerData.password" 
+               type="password" 
+               placeholder="Password" 
+               class="login-input">
+        <button (click)="register()" class="login-btn">Create Account</button>
+      </div>
+    </div>
+  </div>
+</ng-template>
