@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'master', url: 'https://github.com/shantisingh545/Docker-Complter/tree/master'
+                git branch: 'master', url: 'https://github.com/shantisingh545/Docker-Complter.git'
             }
         }
 
