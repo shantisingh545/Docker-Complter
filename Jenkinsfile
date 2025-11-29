@@ -4,13 +4,13 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'master', url: 'https://github.com/shantisingh545/Docker-Complter/tree/backend'
+                git branch: 'master', url: 'https://github.com/shantisingh545/Docker-Complter/tree/master'
             }
         }
 
         stage('Build Backend (Spring Boot)') {
             steps {
-                dir('backend') {
+                dir('dashboard') {
                     sh './mvnw clean package -DskipTests'
                 }
             }
@@ -18,7 +18,7 @@ pipeline {
 
         stage('Build Frontend (Angular)') {
             steps {
-                dir('frontend') {
+                dir('GamifiedFrontend') {
                     sh 'npm install'
                     sh 'npm run build'
                 }
