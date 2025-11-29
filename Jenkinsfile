@@ -20,6 +20,7 @@ pipeline {
         stage('Build Frontend (Angular)') {
             steps {
                 dir('GamifiedFrontend') {
+                    sh 'export PATH=$PATH:/home/nisha9t/.nvm/versions/node/v18.20.7/bin'
                     sh 'npm install'
                     sh 'npm run build'
                 }
