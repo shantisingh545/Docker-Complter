@@ -11,6 +11,7 @@ pipeline {
         stage('Build Backend (Spring Boot)') {
             steps {
                 dir('dashboard') {
+                   sh 'chmod +x mvnw'
                     sh './mvnw clean package -DskipTests'
                 }
             }
