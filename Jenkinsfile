@@ -45,7 +45,7 @@ pipeline {
                     echo "Copying Angular dist to local web directory..."
 
                     sudo rm -rf /var/www/html/*
-                    sudo cp -r frontend/dist/* /var/www/html/
+                    sudo cp -r GamifiedFrontend/dist/* /var/www/html/
 
                     echo "Frontend deployed successfully!"
                 '''
