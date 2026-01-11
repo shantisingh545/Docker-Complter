@@ -156,16 +156,6 @@ pipeline {
 
     stages {
 
-        stage('Load Environment Variables') {
-            steps {
-                sh '''
-                set -a
-                . /home/jenkins/env/docker.env
-                set +a
-                '''
-            }
-        }
-
         stage('Checkout Code') {
             steps {
                 git branch: 'backend', url: 'https://github.com/shantisingh545/Docker-Complter.git'
@@ -181,65 +171,47 @@ pipeline {
             }
         }
 
-        stage('Build Frontend (Angular)') {
+        stage('Build Frontend') {
             steps {
                 dir('GamifiedFrontend') {
                     sh '''
-                    node -v
-                npm -v
-                npm install
-                npm run build
-                '''
+                       node -v
+                       npm -v
+                        npm install
+                        npm run build
+                    '''
                 }
             }
         }
 
-
-        stage('Build Docker Images') {
+        stage('Docker Build & Push') {
             steps {
-                sh '''
-                docker build -t $BACKEND_IMAGE:latest -f dashboard/Dockerfile dashboard
-                docker build -t $FRONTEND_IMAGE:latest -f GamifiedFrontend/Dockerfile GamifiedFrontend
-                '''
+                script {
+                    def envVars = readFile('/home/jenkins/env/docker.env').split('\n')
+
+                    withEnv(envVars) {
+
+                        sh '''
+                        echo "Backend Image = $BACKEND_IMAGE"
+                        echo "Frontend Image = $FRONTEND_IMAGE"
+
+                        docker build -t $BACKEND_IMAGE:latest -f dashboard/Dockerfile dashboard
+                        docker build -t $FRONTEND_IMAGE:latest -f GamifiedFrontend/Dockerfile GamifiedFrontend
+
+                        docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
+
+                        docker push $BACKEND_IMAGE:latest
+                        docker push $FRONTEND_IMAGE:latest
+
+                        docker stop backend frontend || true
+                        docker rm backend frontend || true
+
+                        docker run -d --name backend -p 8080:8080 $BACKEND_IMAGE:latest
+                        docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:latest
+                        '''
+                    }
+                }
             }
-        }
-
-        stage('Login to DockerHub') {
-            steps {
-                sh '''
-                docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
-                '''
-            }
-        }
-
-        stage('Push Images to DockerHub') {
-            steps {
-                sh '''
-                docker push $BACKEND_IMAGE:latest
-                docker push $FRONTEND_IMAGE:latest
-                '''
-            }
-        }
-
-        stage('Deploy Containers') {
-            steps {
-                sh '''
-                docker stop backend frontend || true
-                docker rm backend frontend || true
-
-                docker run -d --name backend -p 9090:9090 $BACKEND_IMAGE:latest
-                docker run -d --name frontend -p 4200:4200 $FRONTEND_IMAGE:latest
-                '''
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "🚀 Application is LIVE!"
-        }
-        failure {
-            echo "❌ Pipeline failed"
         }
     }
 }
