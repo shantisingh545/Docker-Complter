@@ -227,7 +227,7 @@ pipeline {
                                     .findAll { it && !it.startsWith('#') }
 
                     withEnv(envVars) {
-                        dir('.') {  // root of repo
+                        dir('dashboard') {  // root of repo
                             sh '''
                                 echo "Deploying backend + Postgres via docker-compose..."
 
@@ -235,7 +235,7 @@ pipeline {
                                 docker-compose build
 
                                 # Start backend + Postgres in detached mode
-                                docker-compose up -d 
+                                docker-compose up -d --build
                             '''
                         }
                     }
