@@ -214,8 +214,8 @@ pipeline {
                             docker rm backend frontend || true
 
                             # Run new containers
-                            docker run -d --name backend -p 8080:8080 $BACKEND_IMAGE:latest
-                            docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:latest
+                            docker run -d --name backend -p 9090:9090 $BACKEND_IMAGE:latest
+                            docker run -d --name frontend -p 4200:4200 $FRONTEND_IMAGE:latest
                         '''
                     }
                 }
@@ -225,7 +225,7 @@ pipeline {
 
     post {
         success {
-            echo "🚀 Application is LIVE! Backend at http://localhost:8080, Frontend at http://localhost"
+            echo "🚀 Application is LIVE! Backend at http://localhost:9090, Frontend at http://localhost:4200"
         }
         failure {
             echo "❌ Pipeline failed. Check logs above."
