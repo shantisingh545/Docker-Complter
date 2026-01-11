@@ -159,7 +159,7 @@ pipeline {
         // 1️⃣ Checkout Code
         stage('Checkout Code') {
             steps {
-                git branch: 'backend', url: 'https://github.com/shantisingh545/Docker-Complter.git'
+                git branch: 'backend', url: 'https://github.com/shantisingh5454/Docker-Complter.git'
             }
         }
 
@@ -187,34 +187,80 @@ pipeline {
             }
         }
 
-        // 4️⃣ Docker Build, Push & Deploy
-        stage('Docker Build, Push & Deploy') {
+        // 4️⃣ Docker Build & Push (optional, if you want images on DockerHub)
+        stage('Docker Build & Push') {
             steps {
                 script {
-                    // Load env file directly into withEnv (as List<String>)
-                    withEnv(readFile('/home/jenkins/env/docker.env').readLines().collect{it.trim()}.findAll{it && !it.startsWith('#')} ){
+                    // Clean read env variables
+                    def envVars = readFile('/home/jenkins/env/docker.env')
+                                    .readLines()
+                                    .collect { it.trim() }
+                                    .findAll { it && !it.startsWith('#') }
 
+                    withEnv(envVars) {
                         sh '''
-                            echo "Backend Image = $BACKEND_IMAGE"
-                            echo "Frontend Image = $FRONTEND_IMAGE"
+                            echo "Building Docker images for backend and frontend..."
 
-                            # Build Docker images
+                            # Build backend and frontend images
                             docker build -t $BACKEND_IMAGE:latest -f dashboard/Dockerfile dashboard
                             docker build -t $FRONTEND_IMAGE:latest -f GamifiedFrontend/Dockerfile GamifiedFrontend
 
-                            # DockerHub login
+                            # Login to DockerHub
                             docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
 
-                            # Push Docker images
+                            # Push images
                             docker push $BACKEND_IMAGE:latest
                             docker push $FRONTEND_IMAGE:latest
+                        '''
+                    }
+                }
+            }
+        }
 
-                            # Stop and remove old containers if running
-                            docker stop backend frontend || true
-                            docker rm backend frontend || true
+        // 5️⃣ Deploy Backend + Postgres with Docker Compose
+        stage('Deploy Backend with Postgres') {
+            steps {
+                script {
+                    def envVars = readFile('/home/jenkins/env/docker.env')
+                                    .readLines()
+                                    .collect { it.trim() }
+                                    .findAll { it && !it.startsWith('#') }
 
-                            # Run new containers
-                            docker run -d --name backend -p 9090:9090 $BACKEND_IMAGE:latest
+                    withEnv(envVars) {
+                        dir('.') {  // root of repo
+                            sh '''
+                                echo "Deploying backend + Postgres via docker-compose..."
+
+                                # Build images according to docker-compose.yml
+                                docker-compose build
+
+                                # Start backend + Postgres in detached mode
+                                docker-compose up -d 
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        // 6️⃣ Deploy Frontend container separately
+        stage('Deploy Frontend') {
+            steps {
+                script {
+                    def envVars = readFile('/home/jenkins/env/docker.env')
+                                    .readLines()
+                                    .collect { it.trim() }
+                                    .findAll { it && !it.startsWith('#') }
+
+                    withEnv(envVars) {
+                        sh '''
+                            echo "Deploying frontend container..."
+
+                            # Stop/remove old frontend container
+                            docker stop frontend || true
+                            docker rm frontend || true
+
+                            # Run frontend container
                             docker run -d --name frontend -p 4200:4200 $FRONTEND_IMAGE:latest
                         '''
                     }
@@ -225,10 +271,12 @@ pipeline {
 
     post {
         success {
-            echo "🚀 Application is LIVE! Backend at http://localhost:9090, Frontend at http://localhost:4200"
+            echo "🚀 Application deployed successfully!"
+            echo "Backend: http://localhost:9090"
+            echo "Frontend: http://localhost:4200"
         }
         failure {
-            echo "❌ Pipeline failed. Check logs above."
+            echo "❌ Pipeline failed. Check Jenkins logs."
         }
     }
 }
