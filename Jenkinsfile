@@ -192,7 +192,7 @@ pipeline {
             steps {
                 script {
                     // Load env file directly into withEnv (as List<String>)
-                    withEnv(readFile('/home/jenkins/env/docker.env').readLines()) {
+                    withEnv(readFile('/home/jenkins/env/docker.env').readLines().collect{it.trim()}.findAll{it && !it.startsWith('#')} ){
 
                         sh '''
                             echo "Backend Image = $BACKEND_IMAGE"
