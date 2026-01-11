@@ -185,7 +185,7 @@ pipeline {
             steps {
                 dir('GamifiedFrontend') {
                     sh '''
-                        export PATH=$PATH:/home/nisha9t/.nvm/versions/node/v18.20.7/bin
+                        
                         npm install
                         npm run build
                     '''
