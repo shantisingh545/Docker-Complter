@@ -156,12 +156,14 @@ pipeline {
 
     stages {
 
+        // 1️⃣ Checkout Code
         stage('Checkout Code') {
             steps {
                 git branch: 'backend', url: 'https://github.com/shantisingh545/Docker-Complter.git'
             }
         }
 
+        // 2️⃣ Build Backend (Spring Boot)
         stage('Build Backend') {
             steps {
                 dir('dashboard') {
@@ -171,12 +173,13 @@ pipeline {
             }
         }
 
+        // 3️⃣ Build Frontend (Angular)
         stage('Build Frontend') {
             steps {
                 dir('GamifiedFrontend') {
                     sh '''
-                       node -v
-                       npm -v
+                        node -v
+                        npm -v
                         npm install
                         npm run build
                     '''
@@ -184,36 +187,48 @@ pipeline {
             }
         }
 
+        // 4️⃣ Docker Build, Push & Deploy
         stage('Docker Build, Push & Deploy') {
-    steps {
-        // Wrap everything in script
-        script {
-            withEnv(readFile('/home/jenkins/env/docker.env').readLines()) {
-                sh '''
-                    echo "Backend Image = $BACKEND_IMAGE"
-                    echo "Frontend Image = $FRONTEND_IMAGE"
+            steps {
+                script {
+                    // Load env file directly into withEnv (as List<String>)
+                    withEnv(readFile('/home/jenkins/env/docker.env').readLines()) {
 
-                    # Build Docker images
-                    docker build -t $BACKEND_IMAGE:latest -f dashboard/Dockerfile dashboard
-                    docker build -t $FRONTEND_IMAGE:latest -f GamifiedFrontend/Dockerfile GamifiedFrontend
+                        sh '''
+                            echo "Backend Image = $BACKEND_IMAGE"
+                            echo "Frontend Image = $FRONTEND_IMAGE"
 
-                    # DockerHub login
-                    docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
+                            # Build Docker images
+                            docker build -t $BACKEND_IMAGE:latest -f dashboard/Dockerfile dashboard
+                            docker build -t $FRONTEND_IMAGE:latest -f GamifiedFrontend/Dockerfile GamifiedFrontend
 
-                    # Push images
-                    docker push $BACKEND_IMAGE:latest
-                    docker push $FRONTEND_IMAGE:latest
+                            # DockerHub login
+                            docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
 
-                    # Stop and remove old containers
-                    docker stop backend frontend || true
-                    docker rm backend frontend || true
+                            # Push Docker images
+                            docker push $BACKEND_IMAGE:latest
+                            docker push $FRONTEND_IMAGE:latest
 
-                    # Run new containers
-                    docker run -d --name backend -p 8080:8080 $BACKEND_IMAGE:latest
-                    docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:latest
-                '''
+                            # Stop and remove old containers if running
+                            docker stop backend frontend || true
+                            docker rm backend frontend || true
+
+                            # Run new containers
+                            docker run -d --name backend -p 8080:8080 $BACKEND_IMAGE:latest
+                            docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:latest
+                        '''
+                    }
+                }
             }
         }
     }
+
+    post {
+        success {
+            echo "🚀 Application is LIVE! Backend at http://localhost:8080, Frontend at http://localhost"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check logs above."
+        }
+    }
 }
-  }
