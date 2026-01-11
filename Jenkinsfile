@@ -187,7 +187,8 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 script {
-                    def envVars = readFile('/home/jenkins/env/docker.env').split('\n')
+                    def envVars = readFile('/home/jenkins/env/docker.env').readLines()
+                    }
 
                     withEnv(envVars) {
 
@@ -206,7 +207,7 @@ pipeline {
                         docker stop backend frontend || true
                         docker rm backend frontend || true
 
-                        docker run -d --name backend -p 8080:8080 $BACKEND_IMAGE:latest
+                        docker run -d --name backend -p 9090:9090 $BACKEND_IMAGE:latest
                         docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:latest
                         '''
                     }
@@ -214,4 +215,3 @@ pipeline {
             }
         }
     }
-}
