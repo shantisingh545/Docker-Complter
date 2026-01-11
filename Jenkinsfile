@@ -1,4 +1,4 @@
-// This for yhe simple deployment process at the Jenkins
+/* This for yhe simple deployment process at the Jenkins
 pipeline {
     agent any
 
@@ -52,7 +52,11 @@ pipeline {
                 '''
             }
         }
+        stage('Building Docker Image'){
+
+        }
     }
+
 
     post {
         success {
@@ -147,4 +151,93 @@ pipeline {
     }
 }
 */
+pipeline {
+    agent any
 
+    stages {
+
+        stage('Load Environment Variables') {
+            steps {
+                sh '''
+                set -a
+                source /home/jenkins/env/docker.env
+                set +a
+                '''
+            }
+        }
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'backend', url: 'https://github.com/shantisingh545/Docker-Complter.git'
+            }
+        }
+
+        stage('Build Backend') {
+            steps {
+                dir('dashboard') {
+                    sh 'chmod +x mvnw'
+                    sh './mvnw clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                dir('GamifiedFrontend') {
+                    sh '''
+                        export PATH=$PATH:/home/nisha9t/.nvm/versions/node/v18.20.7/bin
+                        npm install
+                        npm run build
+                    '''
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh '''
+                docker build -t $BACKEND_IMAGE:latest -f dashboard/Dockerfile dashboard
+                docker build -t $FRONTEND_IMAGE:latest -f GamifiedFrontend/Dockerfile GamifiedFrontend
+                '''
+            }
+        }
+
+        stage('Login to DockerHub') {
+            steps {
+                sh '''
+                docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
+                '''
+            }
+        }
+
+        stage('Push Images to DockerHub') {
+            steps {
+                sh '''
+                docker push $BACKEND_IMAGE:latest
+                docker push $FRONTEND_IMAGE:latest
+                '''
+            }
+        }
+
+        stage('Deploy Containers') {
+            steps {
+                sh '''
+                docker stop backend frontend || true
+                docker rm backend frontend || true
+
+                docker run -d --name backend -p 9090:9090 $BACKEND_IMAGE:latest
+                docker run -d --name frontend -p 4200:4200 $FRONTEND_IMAGE:latest
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🚀 Application is LIVE!"
+        }
+        failure {
+            echo "❌ Pipeline failed"
+        }
+    }
+}
