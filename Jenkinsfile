@@ -160,7 +160,7 @@ pipeline {
             steps {
                 sh '''
                 set -a
-                source /home/jenkins/env/docker.env
+                . /home/jenkins/env/docker.env
                 set +a
                 '''
             }
