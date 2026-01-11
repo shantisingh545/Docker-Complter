@@ -184,34 +184,36 @@ pipeline {
             }
         }
 
-        stage('Docker Build & Push') {
-            steps {
-                script {
-                    def envVars = readFile('/home/jenkins/env/docker.env').readLines()
-                    }
+        stage('Docker Build, Push & Deploy') {
+    steps {
+        // Wrap everything in script
+        script {
+            withEnv(readFile('/home/jenkins/env/docker.env').readLines()) {
+                sh '''
+                    echo "Backend Image = $BACKEND_IMAGE"
+                    echo "Frontend Image = $FRONTEND_IMAGE"
 
-                    withEnv(envVars) {
+                    # Build Docker images
+                    docker build -t $BACKEND_IMAGE:latest -f dashboard/Dockerfile dashboard
+                    docker build -t $FRONTEND_IMAGE:latest -f GamifiedFrontend/Dockerfile GamifiedFrontend
 
-                        sh '''
-                        echo "Backend Image = $BACKEND_IMAGE"
-                        echo "Frontend Image = $FRONTEND_IMAGE"
+                    # DockerHub login
+                    docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
 
-                        docker build -t $BACKEND_IMAGE:latest -f dashboard/Dockerfile dashboard
-                        docker build -t $FRONTEND_IMAGE:latest -f GamifiedFrontend/Dockerfile GamifiedFrontend
+                    # Push images
+                    docker push $BACKEND_IMAGE:latest
+                    docker push $FRONTEND_IMAGE:latest
 
-                        docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
+                    # Stop and remove old containers
+                    docker stop backend frontend || true
+                    docker rm backend frontend || true
 
-                        docker push $BACKEND_IMAGE:latest
-                        docker push $FRONTEND_IMAGE:latest
-
-                        docker stop backend frontend || true
-                        docker rm backend frontend || true
-
-                        docker run -d --name backend -p 9090:9090 $BACKEND_IMAGE:latest
-                        docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:latest
-                        '''
-                    }
-                }
+                    # Run new containers
+                    docker run -d --name backend -p 8080:8080 $BACKEND_IMAGE:latest
+                    docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:latest
+                '''
             }
         }
     }
+}
+  }
