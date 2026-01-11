@@ -181,17 +181,19 @@ pipeline {
             }
         }
 
-        stage('Build Frontend') {
+        stage('Build Frontend (Angular)') {
             steps {
                 dir('GamifiedFrontend') {
                     sh '''
-                        
-                        npm install
-                        npm run build
-                    '''
+                    node -v
+                npm -v
+                npm install
+                npm run build
+                '''
                 }
             }
         }
+
 
         stage('Build Docker Images') {
             steps {
