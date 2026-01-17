@@ -9,7 +9,7 @@
 - **CI/CD**: Jenkins pipeline for automated build, Docker image creation, push, and deployment
 - **Dockerized**: Backend, frontend, and PostgreSQL can run as Docker containers
 - **Environment Variables**: Configurable through `.env` file
-
+- Orchestration-Kubernetes
 ---
 
 ## Environment Setup
