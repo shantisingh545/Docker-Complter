@@ -19,6 +19,7 @@
    - Node.js & npm
    - Java 17+ (for Spring Boot)
    - Jenkins (for CI/CD)
+   - Kubernetes(Minikube)
 
 2. **Environment Variables** (for Jenkins pipeline):
 
